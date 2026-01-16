@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3000/api";
+const API_URL = "https://skill-swapper-1.onrender.com/api";
 let currentUser = null;
 let currentChatPartner = null;
 let allUsersCache = [];
