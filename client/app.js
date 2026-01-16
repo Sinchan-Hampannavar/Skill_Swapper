@@ -21,13 +21,17 @@ function setupUI() {
 }
 
 async function refreshUI() {
-    const res = await fetch(`${API_URL}/users`);
-    allUsersCache = await res.json();
-    
-    const me = allUsersCache.find(u => u.name === currentUser.name);
-    if(me) document.getElementById('balance-display').innerText = `${me.balance.toFixed(1)} Hours`;
+    try {
+        const res = await fetch(`${API_URL}/users`);
+        allUsersCache = await res.json();
+        
+        const me = allUsersCache.find(u => u.name === currentUser.name);
+        if(me) document.getElementById('balance-display').innerText = `${me.balance.toFixed(1)} Hours`;
 
-    renderUserGrid(allUsersCache);
+        renderUserGrid(allUsersCache);
+    } catch (err) {
+        console.error("Error refreshing UI:", err);
+    }
 }
 
 function renderUserGrid(users) {
@@ -114,10 +118,31 @@ async function handleLogin() {
     const name = document.getElementById('login-name').value;
     const skill = document.getElementById('login-skill').value;
     const want = document.getElementById('login-want').value;
-    const res = await fetch(`${API_URL}/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, skill, want }) });
-    const data = await res.json();
-    localStorage.setItem('skillswap_user', JSON.stringify(data.user));
-    location.reload();
+
+    if (!name || !skill) {
+        alert("Please enter Name and Skill");
+        return;
+    }
+
+    try {
+        console.log("Attempting to connect to:", `${API_URL}/login`);
+        const res = await fetch(`${API_URL}/login`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ name, skill, want }) 
+        });
+
+        if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+
+        const data = await res.json();
+        console.log("Login successful:", data);
+
+        localStorage.setItem('skillswap_user', JSON.stringify(data.user));
+        location.reload(); // This "navigates" by refreshing the page to trigger window.onload
+    } catch (error) {
+        console.error("Login Error:", error);
+        alert("Server Connection Error. Your backend might be waking up (Render free tier). Please wait 30 seconds and try again.");
+    }
 }
 
 function handleLogout() { localStorage.removeItem('skillswap_user'); location.reload(); }
