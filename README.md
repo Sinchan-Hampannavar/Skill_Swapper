@@ -17,7 +17,7 @@
 ---
 
 ## 🛠️ Tech Stack
-- **Frontend:** HTML5, CSS3 (Tailwind-inspired styling), JavaScript (ES6+)
+- **Frontend:** HTML5, CSS3 (Tailwind-inspired styling), JavaScript
 - **Backend:** Node.js, Express.js
 - **Database:** MongoDB Atlas (Mongoose)
 - **Hosting:** Netlify (Frontend) & Render (Backend)
