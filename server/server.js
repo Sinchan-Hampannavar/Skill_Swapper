@@ -1,3 +1,4 @@
+require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -6,23 +7,35 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect("mongodb://127.0.0.1:27017/skillswap");
+// --- DATABASE CONNECTION ---
+// Pulls the Atlas string from .env for security
+const dbURI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/skillswap";
 
+mongoose.connect(dbURI)
+    .then(() => console.log("✅ Connected to MongoDB Atlas"))
+    .catch(err => console.error("❌ Connection Error:", err));
+
+// --- SCHEMAS ---
 const userSchema = new mongoose.Schema({
     name: { type: String, unique: true }, 
-    skill: String, want: String, avatar: String, 
+    skill: String, 
+    want: String, 
+    avatar: String, 
     balance: { type: Number, default: 5.0 },
     badges: { type: [String], default: [] } 
 });
 
 const messageSchema = new mongoose.Schema({
-    sender: String, recipient: String, text: String, 
+    sender: String, 
+    recipient: String, 
+    text: String, 
     timestamp: { type: Date, default: Date.now }
 });
 
 const User = mongoose.model('User', userSchema);
 const Message = mongoose.model('Message', messageSchema);
 
+// --- ROUTES ---
 app.post('/api/login', async (req, res) => {
     const { name, skill, want } = req.body;
     let user = await User.findOne({ name });
@@ -30,7 +43,9 @@ app.post('/api/login', async (req, res) => {
         user = new User({ name, skill, want, avatar: name.charAt(0).toUpperCase() });
         await user.save();
     } else {
-        user.skill = skill; user.want = want; await user.save();
+        user.skill = skill; 
+        user.want = want; 
+        await user.save();
     }
     res.json({ user });
 });
@@ -57,7 +72,15 @@ app.post('/api/messages', async (req, res) => {
 
 app.get('/api/messages', async (req, res) => {
     const { user1, user2 } = req.query;
-    res.json(await Message.find({ $or: [{ sender: user1, recipient: user2 }, { sender: user2, recipient: user1 }] }).sort({ timestamp: 1 }));
+    res.json(await Message.find({ 
+        $or: [
+            { sender: user1, recipient: user2 }, 
+            { sender: user2, recipient: user1 }
+        ] 
+    }).sort({ timestamp: 1 }));
 });
 
-app.listen(3000, () => console.log("🚀 Server Ready at http://localhost:3000"));
+// --- SERVER START ---
+// Use process.env.PORT for cloud hosting compatibility
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
