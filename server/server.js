@@ -1,11 +1,18 @@
+const path = require('path');
 require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const app = express();
+console.log('SERVER FILE UPDATED');
 
 // --- MIDDLEWARE ---
-app.use(cors()); // Allows your Netlify frontend to talk to this backend
+app.use(cors({
+    origin: [
+        "http://127.0.0.1:5500",
+        "http://localhost:5500"
+    ]
+})); // Allows your Netlify frontend to talk to this backend
 app.use(express.json()); // Allows server to parse JSON data
 
 // --- DATABASE CONNECTION ---
@@ -13,7 +20,7 @@ app.use(express.json()); // Allows server to parse JSON data
 const dbURI = process.env.MONGODB_URI;
 
 mongoose.connect(dbURI)
-    .then(() => console.log("✅ Connected to MongoDB Atlas"))
+    .then(() => console.log("✅ Connected to Local MongoDB"))
     .catch(err => console.error("❌ Connection Error:", err));
 
 // --- SCHEMAS ---
@@ -27,10 +34,15 @@ const userSchema = new mongoose.Schema({
 });
 
 const messageSchema = new mongoose.Schema({
-    sender: String, 
-    recipient: String, 
-    text: String, 
-    timestamp: { type: Date, default: Date.now }
+    sender: String,
+    recipient: String,
+    text: String,
+    timestamp: { type: Date, default: Date.now },
+
+    read: {
+        type: Boolean,
+        default: false
+    }
 });
 
 const User = mongoose.model('User', userSchema);
@@ -107,7 +119,33 @@ app.get('/api/messages', async (req, res) => {
     }
 });
 
+app.post('/api/mark-read', async (req,res)=>{
+
+    const { sender, recipient } = req.body;
+
+    await Message.updateMany(
+    {
+        sender,
+        recipient,
+        read:false
+    },
+    {
+        $set:{
+            read:true
+        }
+    });
+
+    res.json({success:true});
+});
+
+app.use(express.static(path.join(__dirname, '../client')));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/index.html'));
+});
+
 // --- SERVER START ---
 // Use process.env.PORT for Render compatibility (defaulting to 10000)
 const PORT = process.env.PORT || 10000;
+console.log(path.join(__dirname, '../client/index.html'));
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
