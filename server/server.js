@@ -127,6 +127,22 @@ app.get('/api/messages', async (req, res) => {
     }
 });
 
+// Unread message counts per sender
+app.get('/api/unread', async (req, res) => {
+    const { user } = req.query;
+    try {
+        const unread = await Message.aggregate([
+            { $match: { recipient: user, read: false } },
+            { $sort: { timestamp: 1 } },
+            { $group: { _id: "$sender", count: { $sum: 1 }, last: { $last: "$text" } } }
+        ]);
+        res.json(unread);
+    } catch (error) {
+        console.error("Unread error:", error);
+        res.status(500).json({ error: "Could not fetch unread" });
+    }
+});
+
 // Mark messages as read
 app.post('/api/mark-read', async (req, res) => {
     const { sender, recipient } = req.body;
