@@ -3,6 +3,7 @@ const API_URL = "https://skill-swapper-1.onrender.com/api";
 let currentUser = null;
 let currentChatPartner = null;
 let allUsersCache = [];
+let unreadData = []; // NEW
 
 window.onload = () => {
     const saved = sessionStorage.getItem("skillswap_user");
@@ -23,7 +24,11 @@ window.onload = () => {
 
     setupUI();
     refreshUI();
-    setInterval(fetchMessages, 3000);
+    fetchUnread(); // NEW
+    setInterval(() => { // NEW
+        fetchMessages();
+        fetchUnread();
+    }, 3000);
 };
 
 // When another tab creates or updates a profile, refresh this tab's list.
@@ -67,6 +72,54 @@ async function refreshUI() {
         console.error("Error refreshing profiles:", error);
     }
 }
+
+// ---------- NEW: notifications ----------
+async function fetchUnread() {
+    if (!currentUser) return;
+    try {
+        const res = await fetch(`${API_URL}/unread?user=${encodeURIComponent(currentUser.name)}`);
+        if (!res.ok) return;
+        unreadData = await res.json();
+        renderNotifications();
+    } catch (error) {
+        console.error("Unread error:", error);
+    }
+}
+
+function renderNotifications() {
+    const total = unreadData.reduce((sum, u) => sum + u.count, 0);
+    const badge = document.getElementById("bell-badge");
+    const panel = document.getElementById("notif-panel");
+    if (!badge || !panel) return;
+
+    badge.innerText = total > 9 ? "9+" : total;
+    badge.classList.toggle("hidden", total === 0);
+
+    panel.innerHTML = unreadData.length === 0
+        ? `<p class="text-xs text-slate-400 text-center p-4">No new messages</p>`
+        : unreadData.map((u) => `
+            <button onclick="openFromNotification('${u._id}')"
+                class="w-full text-left p-3 rounded-xl hover:bg-slate-50 flex items-center gap-3">
+                <div class="w-9 h-9 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center font-black">${u._id[0].toUpperCase()}</div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-slate-900">${u._id}</p>
+                    <p class="text-xs text-slate-500 truncate">${u.last}</p>
+                </div>
+                <span class="bg-red-500 text-white text-[10px] font-bold rounded-full px-2 py-0.5">${u.count}</span>
+            </button>
+        `).join("");
+}
+
+function toggleNotifications() {
+    document.getElementById("notif-panel").classList.toggle("hidden");
+}
+
+function openFromNotification(name) {
+    document.getElementById("notif-panel").classList.add("hidden");
+    const user = allUsersCache.find((u) => u.name === name);
+    openChat(name, user?.avatar || "");
+}
+// ---------- end notifications ----------
 
 function renderUserGrid(users) {
     const grid = document.getElementById("user-grid");
@@ -231,6 +284,22 @@ async function fetchMessages() {
 
         const box = document.getElementById("chat-messages");
         box.scrollTop = box.scrollHeight;
+
+        // NEW: mark messages as read once the chat is open
+        const hasUnread = messages.some(
+            (m) => m.sender === currentChatPartner && !m.read
+        );
+        if (hasUnread) {
+            await fetch(`${API_URL}/mark-read`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    sender: currentChatPartner,
+                    recipient: currentUser.name
+                })
+            });
+            fetchUnread();
+        }
     } catch (error) {
         console.error("Could not load messages:", error);
     }

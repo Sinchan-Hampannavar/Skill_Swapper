@@ -34,16 +34,25 @@
             <h1 class="text-lg font-extrabold text-slate-900 tracking-tighter uppercase">Skillswap</h1>
         </div>
         <div class="flex items-center gap-4">
-            <div id="user-badge" class="hidden md:flex items-center gap-3 pr-4 border-r">
+                        <div id="user-badge" class="hidden md:flex items-center gap-3 pr-4 border-r">
                 <div class="text-right">
                     <span id="my-name" class="block text-sm font-bold text-slate-800">User</span>
                     <button onclick="handleLogout()" class="text-[10px] text-red-500 font-bold uppercase hover:underline">Logout</button>
                 </div>
                 <div id="my-avatar" class="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold">U</div>
+
+                <!-- 🔔 NEW: notification bell -->
+                <div class="relative">
+                    <button onclick="toggleNotifications()"
+                        class="relative w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-lg">
+                        🔔
+                        <span id="bell-badge"
+                            class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">0</span>
+                    </button>
+                    <div id="notif-panel"
+                        class="hidden absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 p-2 max-h-80 overflow-y-auto"></div>
+                </div>
             </div>
-          <div id="notification-box"
-     class="hidden flex gap-2">
-</div>
 
 <div class="bg-slate-900 px-5 py-2 rounded-2xl text-white font-bold text-xs flex items-center gap-2">
                 <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
