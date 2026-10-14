@@ -1,5 +1,5 @@
 const path = require('path');
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -9,28 +9,34 @@ console.log('SERVER FILE UPDATED');
 // --- MIDDLEWARE ---
 app.use(cors({
     origin: [
-        "http://127.0.0.1:5500",
+        "https://skill-swaper.netlify.app",   // deployed frontend
+        "http://127.0.0.1:5500",              // local dev
         "http://localhost:5500"
-    ]
-})); // Allows your Netlify frontend to talk to this backend
-app.use(express.json()); // Allows server to parse JSON data
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type"]
+}));
+app.use(express.json());
 
 // --- DATABASE CONNECTION ---
-// Pulls the Atlas string from Render Environment Variables for security
 const dbURI = process.env.MONGODB_URI;
 
+if (!dbURI) {
+    console.error("❌ MONGODB_URI is not set in environment variables!");
+}
+
 mongoose.connect(dbURI)
-    .then(() => console.log("✅ Connected to Local MongoDB"))
+    .then(() => console.log("✅ Connected to MongoDB Atlas"))
     .catch(err => console.error("❌ Connection Error:", err));
 
 // --- SCHEMAS ---
 const userSchema = new mongoose.Schema({
-    name: { type: String, unique: true }, 
-    skill: String, 
-    want: String, 
-    avatar: String, 
+    name: { type: String, unique: true },
+    skill: String,
+    want: String,
+    avatar: String,
     balance: { type: Number, default: 5.0 },
-    badges: { type: [String], default: [] } 
+    badges: { type: [String], default: [] }
 });
 
 const messageSchema = new mongoose.Schema({
@@ -38,11 +44,7 @@ const messageSchema = new mongoose.Schema({
     recipient: String,
     text: String,
     timestamp: { type: Date, default: Date.now },
-
-    read: {
-        type: Boolean,
-        default: false
-    }
+    read: { type: Boolean, default: false }
 });
 
 const User = mongoose.model('User', userSchema);
@@ -59,12 +61,13 @@ app.post('/api/login', async (req, res) => {
             user = new User({ name, skill, want, avatar: name.charAt(0).toUpperCase() });
             await user.save();
         } else {
-            user.skill = skill; 
-            user.want = want; 
+            user.skill = skill;
+            user.want = want;
             await user.save();
         }
         res.json({ user });
     } catch (error) {
+        console.error("Login error:", error);
         res.status(500).json({ error: "Login failed" });
     }
 });
@@ -75,6 +78,7 @@ app.get('/api/users', async (req, res) => {
         const users = await User.find();
         res.json(users);
     } catch (error) {
+        console.error("Users error:", error);
         res.status(500).json({ error: "Could not fetch users" });
     }
 });
@@ -82,16 +86,18 @@ app.get('/api/users', async (req, res) => {
 // Send a Message or Transaction
 app.post('/api/messages', async (req, res) => {
     const { sender, recipient, text, isTransaction } = req.body;
-    
+
     try {
         if (isTransaction) {
             const payer = await User.findOne({ name: sender });
-            if (!payer || payer.balance < 1) return res.status(400).json({ error: "Insufficient credits!" });
-            
+            if (!payer || payer.balance < 1) {
+                return res.status(400).json({ error: "Insufficient credits!" });
+            }
+
             await User.findOneAndUpdate({ name: sender }, { $inc: { balance: -1.0 } });
-            await User.findOneAndUpdate({ name: recipient }, { 
+            await User.findOneAndUpdate({ name: recipient }, {
                 $inc: { balance: 1.0 },
-                $addToSet: { badges: "🌟 Top Mentor" } 
+                $addToSet: { badges: "🌟 Top Mentor" }
             });
         }
 
@@ -99,6 +105,7 @@ app.post('/api/messages', async (req, res) => {
         await newMessage.save();
         res.json({ success: true });
     } catch (error) {
+        console.error("Message error:", error);
         res.status(500).json({ error: "Message failed to send" });
     }
 });
@@ -107,37 +114,35 @@ app.post('/api/messages', async (req, res) => {
 app.get('/api/messages', async (req, res) => {
     const { user1, user2 } = req.query;
     try {
-        const messages = await Message.find({ 
+        const messages = await Message.find({
             $or: [
-                { sender: user1, recipient: user2 }, 
+                { sender: user1, recipient: user2 },
                 { sender: user2, recipient: user1 }
-            ] 
+            ]
         }).sort({ timestamp: 1 });
         res.json(messages);
     } catch (error) {
+        console.error("Fetch messages error:", error);
         res.status(500).json({ error: "Could not fetch messages" });
     }
 });
 
-app.post('/api/mark-read', async (req,res)=>{
-
+// Mark messages as read
+app.post('/api/mark-read', async (req, res) => {
     const { sender, recipient } = req.body;
-
-    await Message.updateMany(
-    {
-        sender,
-        recipient,
-        read:false
-    },
-    {
-        $set:{
-            read:true
-        }
-    });
-
-    res.json({success:true});
+    try {
+        await Message.updateMany(
+            { sender, recipient, read: false },
+            { $set: { read: true } }
+        );
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Mark-read error:", error);
+        res.status(500).json({ error: "Could not mark as read" });
+    }
 });
 
+// --- STATIC FILES (optional, only if /client exists on Render) ---
 app.use(express.static(path.join(__dirname, '../client')));
 
 app.get('/', (req, res) => {
@@ -145,7 +150,5 @@ app.get('/', (req, res) => {
 });
 
 // --- SERVER START ---
-// Use process.env.PORT for Render compatibility (defaulting to 10000)
 const PORT = process.env.PORT || 10000;
-console.log(path.join(__dirname, '../client/index.html'));
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
