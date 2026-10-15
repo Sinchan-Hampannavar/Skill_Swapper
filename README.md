@@ -3,7 +3,7 @@
 **Exchange your time, share your skills.** A community-driven platform where users trade their expertise using a time-based credit system.
 
 ## 🚀 Live Demo
-[View the Live Website](https://skill-swapper.netlify.app)
+[View the Live Website](https://skill-swaper.netlify.app)
 
 ---
 
