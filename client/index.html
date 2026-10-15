@@ -58,7 +58,7 @@
             <h1 class="text-lg font-extrabold text-slate-900 tracking-tighter uppercase">Skillswap</h1>
         </div>
         <div class="flex items-center gap-4">
-                        <div id="user-badge" class="hidden md:flex items-center gap-3 pr-4 border-r">
+                        <div id="user-badge" class="hidden flex items-center gap-2 md:gap-3 pr-2 md:pr-4 border-r">
                 <div class="text-right">
                     <span id="my-name" class="block text-sm font-bold text-slate-800">User</span>
                     <button onclick="handleLogout()" class="text-[10px] text-red-500 font-bold uppercase hover:underline">Logout</button>
@@ -74,8 +74,7 @@
                             class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">0</span>
                     </button>
                     <div id="notif-panel"
-                        class="hidden absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 p-2 max-h-80 overflow-y-auto"></div>
-                </div>
+    class="hidden fixed left-4 right-4 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-72 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 p-2 max-h-80 overflow-y-auto"></div>
             </div>
 
 <div class="bg-slate-900 px-5 py-2 rounded-2xl text-white font-bold text-xs flex items-center gap-2">
@@ -96,7 +95,7 @@
         <div id="user-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
     </main>
 
-    <div id="chat-view" class="fixed bottom-8 right-8 w-96 h-[550px] bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 hidden flex flex-col z-[100] overflow-hidden">
+   <div id="chat-view" class="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 w-[calc(100vw-2rem)] sm:w-96 h-[75vh] sm:h-[550px] bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 hidden flex flex-col z-[100] overflow-hidden">
         <div class="p-6 bg-slate-900 text-white flex justify-between items-center">
             <div class="flex items-center gap-4">
                 <div id="chat-avatar" class="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center font-bold">?</div>
